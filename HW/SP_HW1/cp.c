@@ -1,55 +1,71 @@
+/*
+Write a program like cp that,
+when used to copy a regular file that contains holes(sequences of null bytes),
+also creates corresponding holes in the target file.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 
-#define BUFSIZE 1024
+#define BUFFER_SIZE 2048
 
-int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s source_file destination_file\n", argv[0]);
+void print_usage(){
+    printf("Error: Invalid command\n");
+    printf("Usage: ./cp source_file target_file\n");
+}
+
+int main(int argc, char *argv[]){
+    if(argc != 3){
+        print_usage();
         exit(EXIT_FAILURE);
     }
 
+    /* get source and target file from command line arguments */
     char *source_file = argv[1];
-    char *destination_file = argv[2];
+    char *target_file = argv[2];
 
-    int src_fd, dest_fd;
-    char buffer[BUFSIZE];
-    ssize_t nread;
+    int source_fd, target_fd; /* file descriptor*/
 
-    src_fd = open(source_file, O_RDONLY);
-    if (src_fd == -1) {
-        perror("open source file");
+    /* open source file */
+    source_fd = open(source_file, O_RDONLY);
+    
+    if(source_fd == -1){
+        perror("source open");
         exit(EXIT_FAILURE);
     }
 
-    dest_fd = open(destination_file, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-    if (dest_fd == -1) {
-        perror("open destination file");
-        close(src_fd);
+    /* open target file */
+    int target_flag = O_WRONLY | O_CREAT | O_TRUNC;
+    int target_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH; /*rw-rw-rw-*/
+    target_fd = open(target_file, target_flag, target_mode);
+    
+    if(target_fd == -1){
+        perror("target open");
         exit(EXIT_FAILURE);
     }
 
-    while ((nread = read(src_fd, buffer, BUFSIZE)) > 0) {
-        ssize_t nwritten = write(dest_fd, buffer, nread);
-        if (nwritten == -1) {
+    /* read from source file and write into target file */
+    ssize_t read_bytes;
+    char buffer[BUFFER_SIZE];
+    
+    while((read_bytes = read(source_fd, buffer, BUFFER_SIZE)) > 0){
+        if(write(target_fd, buffer, read_bytes) == -1){
             perror("write");
-            close(src_fd);
-            close(dest_fd);
+            close(source_fd);
+            close(target_fd);
             exit(EXIT_FAILURE);
         }
     }
 
-    if (nread == -1) {
-        perror("read");
-        close(src_fd);
-        close(dest_fd);
+    /* close all files */
+    if(close(source_fd) == -1 || close(target_fd) == -1){
+        perror("close");
         exit(EXIT_FAILURE);
     }
-
-    close(src_fd);
-    close(dest_fd);
 
     return 0;
 }

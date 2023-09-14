@@ -1,3 +1,13 @@
+/*
+The tee command reads its standard input until end-of-file,
+writing a copy of the input to standard output and to the file named in its command-line argument.
+(We show an example of the use of this command when we discuss FIFOs in Section 44.7.)
+Implement tee using I/O system calls. By default, tee overwrites any existing file with the given name.
+Implement the –a command-line option (tee –a file),
+which causes tee to append text to the end of a file if it already exists.
+(Refer to Appendix B for a description of the getopt() function, which can be used to parse command-line options.)
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,7 +19,7 @@
 
 void print_usage(){
     printf("Error: Invalid command\n");
-    printf("Usage: ./prog [-a] file\n");
+    printf("Usage: ./tee [-a] file\n");
 }
 
 int main(int argc, char *argv[]){
@@ -36,7 +46,7 @@ int main(int argc, char *argv[]){
 
     // open func flag and mode
     int flag = O_WRONLY | O_CREAT;
-    int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
+    int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH; /*rw-rw-r--*/
 
     // append or not
     if(append)
