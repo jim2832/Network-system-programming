@@ -18,17 +18,17 @@ int main(int argc, char *argv[]){
 
     // using opt to parse the command line
     while((opt = getopt(argc, argv, "a")) != -1){
-        switch(opt){
-            // optional flag
-            case 'a':
-                append = 1;
-                break;
-            default:
-                print_usage();
-                exit(EXIT_FAILURE);
+        if(opt == 'a'){
+            append = 1;
+            break;
+        }
+        else{
+            print_usage();
+            exit(EXIT_FAILURE);
         }
     }
-
+    
+    // command line arguments error
     if(optind >= argc){
         print_usage();
         exit(EXIT_FAILURE);
@@ -68,11 +68,6 @@ int main(int argc, char *argv[]){
             perror("write to file");
             exit(EXIT_FAILURE);
         }
-    }
-
-    if(read_bytes == -1){
-        perror("read");
-        exit(EXIT_FAILURE);
     }
 
     // close the file
