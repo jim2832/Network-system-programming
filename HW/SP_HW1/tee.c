@@ -26,7 +26,7 @@ int main(int argc, char *argv[]){
     int opt;
     int append = 0; // 0 -> false
 
-    // using opt to parse the command line
+    /* using opt to parse the command line */ 
     while((opt = getopt(argc, argv, "a")) != -1){
         if(opt == 'a'){
             append = 1;
@@ -38,26 +38,26 @@ int main(int argc, char *argv[]){
         }
     }
     
-    // command line arguments error
+    /* command line arguments error */
     if(optind >= argc){
         print_usage();
         exit(EXIT_FAILURE);
     }
 
-    // open func flag and mode
+    /* open func flag and mode */
     int flag = O_WRONLY | O_CREAT;
-    int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH; /*rw-rw-r--*/
+    mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH; /*rw-rw-r--*/
 
-    // append or not
+    /* append or not */ 
     if(append)
         flag |= O_APPEND;
     else
         flag |= O_TRUNC;
 
-    // file descriptor
+    /* file descriptor */
     int fd = open(argv[optind], flag, mode);
 
-    // open error
+    /* open error */ 
     if(fd == -1){
         perror("open");
         exit(EXIT_FAILURE);
@@ -67,20 +67,25 @@ int main(int argc, char *argv[]){
     ssize_t read_bytes;
 
     while((read_bytes = read(STDIN_FILENO, buffer, BUFFER_SIZE)) > 0){
-        // standard output
+        /* standard output */
         if(write(STDOUT_FILENO, buffer, read_bytes) == -1){
             perror("write to stdout");
             exit(EXIT_FAILURE);
         }
 
-        // file
+        /* file */
         if(write(fd, buffer, read_bytes) == -1){
             perror("write to file");
             exit(EXIT_FAILURE);
         }
     }
 
-    // close the file
+    if(read_bytes == -1){
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
+
+    /* close the file */
     if(close(fd) == -1)
         perror("close");
         exit(EXIT_FAILURE);

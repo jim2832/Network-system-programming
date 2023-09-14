@@ -8,6 +8,7 @@ also creates corresponding holes in the target file.
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <string.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
@@ -40,7 +41,7 @@ int main(int argc, char *argv[]){
 
     /* open target file */
     int target_flag = O_WRONLY | O_CREAT | O_TRUNC;
-    int target_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH; /*rw-rw-rw-*/
+    mode_t target_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH; /*rw-rw-rw-*/
     target_fd = open(target_file, target_flag, target_mode);
     
     if(target_fd == -1){
@@ -51,13 +52,23 @@ int main(int argc, char *argv[]){
     /* read from source file and write into target file */
     ssize_t read_bytes;
     char buffer[BUFFER_SIZE];
-    
+    char zeros[BUFFER_SIZE];
+
     while((read_bytes = read(source_fd, buffer, BUFFER_SIZE)) > 0){
-        if(write(target_fd, buffer, read_bytes) == -1){
-            perror("write");
-            close(source_fd);
-            close(target_fd);
+        if(read_bytes == -1){
+            perror("read");
             exit(EXIT_FAILURE);
+        }
+
+        if(memcmp(buffer, zeros, read_bytes) == 0){
+            /* hole found, do not copy over */
+            lseek(target_fd, read_bytes, SEEK_CUR);
+        }
+        else{
+            if(write(target_fd, buffer, read_bytes) == -1){
+                perror("write");
+                exit(EXIT_FAILURE);
+            }
         }
     }
 
