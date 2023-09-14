@@ -1,39 +1,84 @@
-// An implementation of the `tee` command
-// Author: SCC
-
 #include <stdio.h>
-#include <string.h>
-#define APPEND 1
-#define OVERWRITE 0
+#include <stdlib.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
-FILE *direction(const char *filename, int option)
-{
-    const char *__OPT__[2] = {"w+", "a+"};
-    FILE *f = fopen(filename, __OPT__[option]);
+#define BUFFER_SIZE 2048
 
-#ifdef __DEBUG__
-    printf("filename: %s, opt: %d, FILE HEX: %p\n", filename, option, f);
-#endif
-    return f;
+void print_usage(){
+    printf("Error: Invalid command\n");
+    printf("Usage: ./prog [-a] file\n");
 }
 
-int main(int argc, char **argv)
-{
-    FILE *sec_out = NULL;
-    if (argc == 3 && !strcmp(argv[1], "-a"))  // Append option
-        sec_out = direction(argv[2], APPEND);
-    else if (argc == 2)
-        sec_out = direction(argv[1], OVERWRITE);
+int main(int argc, char *argv[]){
+    int opt;
+    int append = 0; // 0 -> false
 
-    int c;
-    while ((c = getc(stdin)) != EOF) {
-        putc(c, stdout);
-        if (sec_out)
-            putc(c, sec_out);
+    // using opt to parse the command line
+    while((opt = getopt(argc, argv, "a")) != -1){
+        switch(opt){
+            // optional flag
+            case 'a':
+                append = 1;
+                break;
+            default:
+                print_usage();
+                exit(EXIT_FAILURE);
+        }
     }
 
-    if (sec_out)
-        fclose(sec_out);
+    if(optind >= argc){
+        print_usage();
+        exit(EXIT_FAILURE);
+    }
+
+    // open func flag and mode
+    int flag = O_WRONLY | O_CREAT;
+    int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
+
+    // append or not
+    if(append)
+        flag |= O_APPEND;
+    else
+        flag |= O_TRUNC;
+
+    // file descriptor
+    int fd = open(argv[optind], flag, mode);
+
+    // open error
+    if(fd == -1){
+        perror("open");
+        exit(EXIT_FAILURE);
+    }
+
+    char buffer[BUFFER_SIZE];
+    ssize_t read_bytes;
+
+    while((read_bytes = read(STDIN_FILENO, buffer, BUFFER_SIZE)) > 0){
+        // standard output
+        if(write(STDOUT_FILENO, buffer, read_bytes) == -1){
+            perror("write to stdout");
+            exit(EXIT_FAILURE);
+        }
+
+        // file
+        if(write(fd, buffer, read_bytes) == -1){
+            perror("write to file");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if(read_bytes == -1){
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
+
+    // close the file
+    if(close(fd) == -1)
+        perror("close");
+        exit(EXIT_FAILURE);
 
     return 0;
 }
