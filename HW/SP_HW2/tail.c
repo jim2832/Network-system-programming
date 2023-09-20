@@ -46,7 +46,7 @@ void tail(int fd, int lines){
         //紀錄目前已經讀取了多少
         total_read_bytes += read_bytes;
 
-        //反向印出每一行
+        //反向讀取每一行
         for(int i=read_bytes-1; i>=0; i--){
             if(buffer[i] == '\n'){
                 lines_count++;
@@ -58,7 +58,6 @@ void tail(int fd, int lines){
         }
     }
 
-    //如果 -n 的參數要求印出的行大於總行數，則印出整個文件
     lseek(fd, 0, SEEK_SET);
     while((read_bytes = read(fd, buffer, BUFFER_SIZE)) > 0){
         write(STDOUT_FILENO, buffer, read_bytes);
