@@ -1,5 +1,5 @@
 all:
-	gcc tail.c -o test
+	gcc tail.c -o tail
 
 clean:
-	rm -f test
+	rm -f tail
