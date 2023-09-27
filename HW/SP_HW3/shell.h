@@ -1,5 +1,7 @@
 /* shell.h : function prototypes for all functions in shell exercise */
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define FALSE 0
 #define TRUE (!FALSE)
