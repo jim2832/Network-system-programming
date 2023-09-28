@@ -1,29 +1,15 @@
-while (token != NULL) {
-        // Resize the array to hold more pointers
-        newArgv = (char **)realloc(newArgv, (count + 1) * sizeof(char *));
-        if (newArgv == NULL) {
-            perror("Memory allocation error");
-            exit(EXIT_FAILURE);
-        }
+// fork1.c
+#include <stdio.h>
+#include <unistd.h>
+int main() {
+  // 建立子行程
+  fork();
+  fork();
 
-        // Allocate memory for the token and copy it
-        newArgv[count] = (char *)malloc(strlen(token) + 1);
-        if (newArgv[count] == NULL) {
-            perror("Memory allocation error");
-            exit(EXIT_FAILURE);
-        }
-        strcpy(newArgv[count], token);
+  // 從這裡開始變成兩個行程
 
-        token = strtok(NULL, delim); // Get the next token
-		printf("[%d] : %s\n", count, token);
-        count++;
-    }
+  // 兩個行程執行同樣的程式
+  printf("Hello world!\n");
 
-    // Resize the array to hold one more pointer for NULL termination
-    newArgv = (char **)realloc(newArgv, (count + 1) * sizeof(char *));
-    if (newArgv == NULL) {
-        perror("Memory allocation error");
-        exit(EXIT_FAILURE);
-    }
-
-    newArgv[count] = NULL; // Null-terminate the array
+  return 0;
+}

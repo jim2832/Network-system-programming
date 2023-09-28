@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <dirent.h>
 #include "shell.h"
 
 
@@ -19,12 +20,40 @@
 /****************************************************************************/
 
 /* "echo" command.  Does not print final <CR> if "-n" encountered. */
-static void bi_echo(char **argv) {
+static void bi_echo(char **argv){
   	/* Fill in code. */
+
+	// get argc
+	int count = 0;
+    while(argv[count] != NULL){
+        count++;
+    }
+
+    int flag = 0;
+
+    // -n flag
+    if(argv[1] && !(strcmp(argv[1], "-n"))){
+        flag = 1;
+        int num = atoi(argv[2]);
+        printf("%s\n", argv[num+2]);
+    }
+    // default
+    else{
+        for(int i=1; i<count; i++){
+            printf("%s ", argv[i]);
+        }
+    }
+
+    if(!flag){
+        printf("\n");
+    }
 }
-/* Fill in code. */
 
-
+/* exit command */
+static void bi_exit(char **argv){
+    free_argv(argv);
+    exit(EXIT_SUCCESS);
+}
 
 
 /****************************************************************************/
@@ -38,8 +67,12 @@ static struct cmd {
 
 	/* Fill in code. */
 
-	{ "echo", bi_echo },		/* When "echo" is typed, bi_echo() executes.  */
-	{ NULL, NULL }				/* NULL terminated. */
+	{ "echo", bi_echo },	/* When "echo" is typed, bi_echo() executes.  */
+    { "quit", bi_exit },
+    { "exit", bi_exit },
+    { "logout", bi_exit },
+    { "bye", bi_exit },
+	{ NULL, NULL }			/* NULL terminated. */
 };
 
 

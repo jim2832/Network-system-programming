@@ -120,7 +120,7 @@ void free_argv(char **oldArgv){
 	 */
 
 	// Free each string and then free the array of pointers
-    while (oldArgv[i] != NULL){
+    while(oldArgv[i] != NULL){
         free(oldArgv[i]);  // Free each string
         i++;
     }
