@@ -39,6 +39,7 @@ uid_t userIdFromName(const char *name){
 void listProcessesForUser(const char *username){
     /* get the user ID from name */
     uid_t uid = userIdFromName(username);
+    printf("%d", uid);
     if(uid == -1){
         fprintf(stderr, "Error: Unable to find user %s\n", username);
         return;
@@ -60,7 +61,7 @@ void listProcessesForUser(const char *username){
         // Check if the entity is a directory and represents a process ID
         if(entity->d_type == 4 && atoi(entity->d_name) != 0){ // It's a directory
             sprintf(path, "/proc/%s/status", entity->d_name);
-            printf("%s\n", path);
+            // printf("%s\n", path);
 
             // Open the status file for the process
             int fd = open(path, O_RDONLY);
@@ -82,7 +83,8 @@ void listProcessesForUser(const char *username){
                 while(token != NULL){
                     if(strncmp(token, "Pid:", 4) == 0){
                         pid = strtok(token + 4, " \t");
-                    } else if(strncmp(token, "Name:", 5) == 0){
+                    }
+                    else if(strncmp(token, "Name:", 5) == 0){
                         command = strtok(token + 5, " \t");
                     }
 
