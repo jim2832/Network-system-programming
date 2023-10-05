@@ -72,7 +72,7 @@ void listProcessesForUser(const char *username){
 
     struct dirent *entity;
     char path[1024];
-    int count = 0;
+    int count = 1;
 
     // DT_DIR(directory) -> 4
     // DT_REG(file) -> 8
@@ -113,8 +113,8 @@ void listProcessesForUser(const char *username){
 
                     // Only list the processes that are run by <username>
                     if(uid == userIdFromName(username)){
-                        count++;
                         printf("%d. Proess ID: %s, Process: %s\n", count, pid, process);
+                        count++;
                     }
                 }
 
@@ -122,7 +122,6 @@ void listProcessesForUser(const char *username){
             fclose(file);
         }
     }
-
     closedir(dir);
 }
 
