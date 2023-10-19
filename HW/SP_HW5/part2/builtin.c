@@ -25,7 +25,7 @@ static void bi_cd(char **argv) ;		/* "cd" command. */
 static void bi_echo(char **argv);		/* "echo" command.  Does not print final <CR> if "-n" encountered. */
 static void bi_hostname(char ** argv);	/* "hostname" command. */
 static void bi_id(char ** argv);		/* "id" command shows user and group of this process. */
-static void bi_pwd();		/* "pwd" command. */
+static void bi_pwd();					/* "pwd" command. */
 static void bi_quit(char **argv);		/* quit/exit/logout/bye command. */
 
 
@@ -66,7 +66,7 @@ static void bi_builtin(char ** argv) {
 	if(argc != 2)
 		printf("Usage: builtin <command>\n");
 
-	// chech whether it is a builtin function
+	// check whether it is a builtin function
 	if(is_builtin(argv[1]))
 		printf("%s is a builtin feature.\n", argv[1]);
 	else
