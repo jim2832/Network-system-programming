@@ -12,7 +12,9 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
+#include <sys/types.h>
 #include <sys/utsname.h>
+#include <string.h>
 #include "shell.h"
 
 /****************************************************************************/
@@ -23,7 +25,7 @@ static void bi_cd(char **argv) ;		/* "cd" command. */
 static void bi_echo(char **argv);		/* "echo" command.  Does not print final <CR> if "-n" encountered. */
 static void bi_hostname(char ** argv);	/* "hostname" command. */
 static void bi_id(char ** argv);		/* "id" command shows user and group of this process. */
-static void bi_pwd(char ** argv);		/* "pwd" command. */
+static void bi_pwd();		/* "pwd" command. */
 static void bi_quit(char **argv);		/* quit/exit/logout/bye command. */
 
 
@@ -54,27 +56,90 @@ static struct cmd {
 
 
 static void bi_builtin(char ** argv) {
-	/* Fill in code. */
+	// get argc
+	int argc = 0;
+    while(argv[argc] != NULL){
+        argc++;
+    }
+
+	// error check
+	if(argc != 2)
+		printf("Usage: builtin <command>\n");
+
+	// chech whether it is a builtin function
+	if(is_builtin(argv[1]))
+		printf("%s is a builtin feature.\n", argv[1]);
+	else
+		printf("%s is NOT a builtin feature.\n", argv[1]);
 }
 
 static void bi_cd(char **argv) {
 	/* Fill in code. */
+
+	// get argc
+	int argc = 0;
+    while(argv[argc] != NULL){
+        argc++;
+    }
+
+	// error check
+	if(argc != 2)
+		printf("Usage: cd <path>\n");
+	
+	// change directory
+	if(chdir(argv[1]) == 0)
+		bi_pwd();
+	else
+		perror("chdir");
 }
 
 static void bi_echo(char **argv) {
 	/* Fill in code. */
+
+	// get argc
+	int count = 0;
+    while(argv[count] != NULL){
+        count++;
+    }
+
+    int flag = 0;
+
+    // -n flag
+    if(argv[1] && !(strcmp(argv[1], "-n"))){
+        flag = 1;
+        int num = atoi(argv[2]);
+        printf("%s\n", argv[num+2]);
+    }
+    // default
+    else{
+        for(int i=1; i<count; i++){
+            printf("%s ", argv[i]);
+        }
+    }
+
+    if(!flag){
+        printf("\n");
+    }
 }
 
 static void bi_hostname(char ** argv) {
 	/* Fill in code. */
+	system("echo -n \"hostname: \" ; hostname");
 }
 
 static void bi_id(char ** argv) {
  	/* Fill in code. */
+	uid_t uid = getuid();
+    gid_t gid = getgid();
+    
+    printf("User ID: %d, Group ID: %d\n", uid, gid);
 }
 
-static void bi_pwd(char ** argv) {
+static void bi_pwd() {
 	/* Fill in code. */
+	char buffer[512];
+    getcwd(buffer, sizeof(buffer));
+    puts(buffer);
 }
 
 static void bi_quit(char **argv) {

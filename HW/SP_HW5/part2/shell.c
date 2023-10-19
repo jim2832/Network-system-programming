@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
 
 			/* Non-builtin command. */
 			} else {
-				run_command(myArgv);
+				// run_command(myArgv);
 			}
 
 			/* Free argv array. */
