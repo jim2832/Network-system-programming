@@ -20,7 +20,7 @@ int redirect_in(char ** myArgv){
   	int i = 0;
   	int fd;
 
-	/* 1) Open file.
+	   /* 1) Open file.
 		* 2) Redirect stdin to use file for input.
 		* 3) Cleanup / close unneeded file descriptors.
 		* 4) Remove the "<" and the filename from myArgv.
@@ -62,9 +62,9 @@ int redirect_in(char ** myArgv){
                 myArgv[j - 2] = myArgv[j];
                 j++;
             }
-            myArgv[j - 2] = NULL;  // Mark the end of arguments.
+            myArgv[j - 2] = NULL;
 
-            return 0;  // Input redirection successfully set up.
+            return 0;
         }
         i++;
     }

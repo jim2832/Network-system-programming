@@ -38,7 +38,7 @@ int redirect_out(char ** myArgv) {
                 return -1;
             }
 
-            // 1) Open the file for output, creating it if it doesn't exist or truncating it if it does.
+            // 1) Open the file.
             fd = open(myArgv[i + 1], O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
             if (fd == -1) {
                 perror("open");
