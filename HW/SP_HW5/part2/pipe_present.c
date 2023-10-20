@@ -3,6 +3,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "shell.h"
 
 /*
@@ -15,14 +16,21 @@ int pipe_present(char ** myCurrentArgv) {
 
   	/* Search through myCurrentArgv for a match on "|". */
 
-  	if /* At the beginning or at the end. */ {
-    	return -1;
+	while(myCurrentArgv[index] != NULL){
+        if(!strcmp(myCurrentArgv[index], "|")){
+			/* At the beginning or at the end. */
+            if(index == 0 || myCurrentArgv[index + 1] == NULL){
+                return -1;
+            }
+			/* In the middle. */
+			else{
+				// printf("index: %d", index);
+                return index;
+            }
+        }
+        index++;
+    }
 
-  	} else if /* Off the end. */ {
-    	return 0;
-
-  	} else {
-    	/* In the middle. */
-    	return index;
-  	}
+	/* Off the end. */
+	return 0;
 }

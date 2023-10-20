@@ -3,6 +3,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "shell.h"
 
 int is_background(char ** myArgv) {

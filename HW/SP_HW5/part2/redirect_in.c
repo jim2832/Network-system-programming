@@ -2,6 +2,8 @@
  * redirect_in.c  :  check for <
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -48,7 +50,7 @@ int redirect_in(char ** myArgv){
                 perror("dup2");
                 return -1;
             }
-
+            
             // 3) Cleanup / close unneeded file descriptors.
             close(fd);
 
@@ -69,5 +71,5 @@ int redirect_in(char ** myArgv){
         i++;
     }
 
-  	return 0;
+  	return -1;
 }
