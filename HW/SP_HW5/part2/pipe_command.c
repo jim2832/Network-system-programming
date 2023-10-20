@@ -14,6 +14,7 @@
 
 void pipe_and_exec(char **myArgv){
   	int pipe_argv_index = pipe_present(myArgv);
+	printf("pipe_argv_index: %d", pipe_argv_index);
   	int pipefds[2];
 	char **left_argv;
 	char **right_argv;
@@ -46,7 +47,7 @@ void pipe_and_exec(char **myArgv){
 			 *
 			 * Fill in code. */
 			if(pipe(pipefds) == -1){
-                perror("Pipe creation failed");
+                perror("Pipe fail");
                 exit(errno);
             }
 
@@ -59,7 +60,7 @@ void pipe_and_exec(char **myArgv){
       		switch(child_pid){
 
         		case -1 :
-					perror("Fork failed");
+					perror("Fork fail");
 	  				break;
 
         		/* Talking parent.  Remember this is a child forked from shell. */

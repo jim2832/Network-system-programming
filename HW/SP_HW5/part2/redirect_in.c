@@ -33,13 +33,14 @@ int redirect_in(char ** myArgv){
 		// Found "<" in the command line arguments.
         if(strcmp(myArgv[i], "<") == 0){
 
-            if(myArgv[i + 1] == NULL){
-                // Error: No filename specified after "<".
+            // file not found
+            if(myArgv[i+1] == NULL){
+                perror("no such file");
                 return -1;
             }
 
             // 1) Open file.
-            fd = open(myArgv[i + 1], O_RDONLY);
+            fd = open(myArgv[i+1], O_RDONLY);
             if(fd == -1){
                 perror("open");
                 return -1;
@@ -55,16 +56,16 @@ int redirect_in(char ** myArgv){
             close(fd);
 
             // 4) Remove the "<" and the filename from myArgv.
-            free(myArgv[i]);      // Free "<".
-            free(myArgv[i + 1]);  // Free the filename.
+            free(myArgv[i]);    // Free "<".
+            free(myArgv[i+1]);  // Free the filename.
             
             // Shift the remaining arguments to the left.
             int j = i + 2;
             while(myArgv[j] != NULL){
-                myArgv[j - 2] = myArgv[j];
+                myArgv[j-2] = myArgv[j];
                 j++;
             }
-            myArgv[j - 2] = NULL;
+            myArgv[j-2] = NULL;
 
             return 0;
         }
