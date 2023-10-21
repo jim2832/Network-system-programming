@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 
 	while(1) {
 		printf("What word do you want : ");
-		gets(tryit.word);
+		scanf("%s", tryit.word);
 		switch(lookup(&tryit,argv[1]) ) {
 			case FOUND:
 				printf("%s : %s\n",tryit.word,tryit.text);
