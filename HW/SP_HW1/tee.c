@@ -49,10 +49,7 @@ int main(int argc, char *argv[]){
     mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH; /*rw-rw-r--*/
 
     /* append or not */ 
-    if(append)
-        flag |= O_APPEND;
-    else
-        flag |= O_TRUNC;
+    flag |= append ? O_APPEND : O_TRUNC;
 
     /* file descriptor */
     int fd = open(argv[optind], flag, mode);
@@ -68,10 +65,10 @@ int main(int argc, char *argv[]){
 
     while((read_bytes = read(STDIN_FILENO, buffer, BUFFER_SIZE)) > 0){
         /* standard output */
-        if(write(STDOUT_FILENO, buffer, read_bytes) == -1){
-            perror("write to stdout");
-            exit(EXIT_FAILURE);
-        }
+        // if(write(STDOUT_FILENO, buffer, read_bytes) == -1){
+        //     perror("write to stdout");
+        //     exit(EXIT_FAILURE);
+        // }
 
         /* file */
         if(write(fd, buffer, read_bytes) == -1){

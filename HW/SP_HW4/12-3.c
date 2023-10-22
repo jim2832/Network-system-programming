@@ -50,8 +50,7 @@ int main(int argc, char* argv[]){
         return -1;
     }
 
-    char *filepath = argv[1];
-    ListProcessWithPath(filepath);
+    ListProcessWithPath(argv[1]);
 
     return 0;
 }

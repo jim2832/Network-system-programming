@@ -58,6 +58,7 @@ void tail(int fd, int lines){
         }
     }
 
+    // 回到檔案開頭
     lseek(fd, 0, SEEK_SET);
     while((read_bytes = read(fd, buffer, BUFFER_SIZE)) > 0){
         write(STDOUT_FILENO, buffer, read_bytes);
