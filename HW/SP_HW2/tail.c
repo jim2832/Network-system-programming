@@ -37,17 +37,17 @@ void tail(int fd, int lines){
         lseek(fd, file_offset, SEEK_SET);
 
         //讀取檔案
-        int read_bytes = read(fd, buffer, read_bytes);
-        if(read_bytes < 0){
+        int read_data = read(fd, buffer, read_bytes);
+        if(read_data < 0){
             perror("read");
             exit(EXIT_FAILURE);
         }
         
         //紀錄目前已經讀取了多少
-        total_read_bytes += read_bytes;
+        total_read_bytes += read_data;
 
         //反向讀取每一行
-        for(int i=read_bytes-1; i>=0; i--){
+        for(int i=read_data-1; i>=0; i--){
             if(buffer[i] == '\n'){
                 lines_count++;
                 if(lines_count >= lines){
@@ -81,6 +81,9 @@ int main(int argc, char *argv[]){
     }
 
     if(argc == 4 && !(strcmp(argv[1], "-n"))){
+        if(!strcmp(argv[2], "0")){
+            exit(EXIT_SUCCESS);
+        }
         lines_printed = atoi(argv[2]);
     }
 
