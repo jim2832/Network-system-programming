@@ -52,15 +52,15 @@ struct Process my_popen(char* command, char* type){
 
         // child process
         case 0:
-            if(strcmp(type, "r") == 0){
+            if(!strcmp(type, "r")){
                 close(pipe_fd[0]); // close read
                 dup2(pipe_fd[1], STDOUT_FILENO); // redirect stdout to the pipe
             }
-            else if(strcmp(type, "w") == 0){
+            else if(!strcmp(type, "w")){
                 close(pipe_fd[1]); // close the write end of the pipe
                 dup2(pipe_fd[0], STDIN_FILENO); // redirect stdin from the pipe
             }
-
+            
             execl("/bin/sh", "sh", "-c", command, NULL); // execute the command
             perror("execl");
             exit(EXIT_FAILURE);
@@ -68,11 +68,11 @@ struct Process my_popen(char* command, char* type){
         
         // parent process
         default:
-            if(strcmp(type, "r") == 0){
+            if(!strcmp(type, "r")){
                 close(pipe_fd[1]); // close write
                 file = fdopen(pipe_fd[0], "r");
             }
-            else if(strcmp(type, "w") == 0){
+            else if(!strcmp(type, "w")){
                 close(pipe_fd[0]); // close read
                 file = fdopen(pipe_fd[1], "w");
             }
