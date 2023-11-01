@@ -4,7 +4,8 @@
         "stat.h": "c",
         "stdlib.h": "c",
         "stdio.h": "c",
-        "fcntl.h": "c"
+        "fcntl.h": "c",
+        "signal.h": "c"
     },
 
     "C_Cpp.clang_format_style": "{ BasedOnStyle: LLVM, IndentWidth: 4, BreakBeforeBraces: Attach}"
