@@ -30,10 +30,9 @@
    }                                      }
 */
 #ifdef NEW
-#include "new.h"
+#include "new_version.h"
 #endif
 
-#define _POSIX_C_SOURCE 19930
 #include <signal.h>
 #include "tlpi_hdr.h"
 

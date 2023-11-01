@@ -1,5 +1,5 @@
-#ifndef __NEW_H__
-#define __NEW_H__
+#ifndef __NEW_VERSION_H__
+#define __NEW_VERSION_H__
 #include <signal.h>
 
 #define sigsuspend my_sigwaitinfo
