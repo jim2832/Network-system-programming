@@ -10,7 +10,7 @@ for i in $(seq 1 $test_count); do
 
     # use awk to extract the seconds of real and append to file
     echo -n "$output" | grep real | awk '{print $2}' | sed 's/^0m//' >> origin_output.txt
-    echo Processing $i/$test_count
+    echo Processing origin version $i/$test_count
 done
 
 # new version
@@ -21,7 +21,7 @@ for i in $(seq 1 $test_count); do
 
     # use awk to extract the seconds of real and append to file
     echo -n "$output" | grep real | awk '{print $2}' | sed 's/^0m//' >> new_output.txt
-    echo Processing $i/$test_count
+    echo Processing new version $i/$test_count
 done
 
 # merge files
