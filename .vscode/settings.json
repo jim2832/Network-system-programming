@@ -7,7 +7,8 @@
         "fcntl.h": "c",
         "signal.h": "c",
         "new_version.h": "c",
-        "time.h": "c"
+        "time.h": "c",
+        "*.inc": "c"
     },
 
     "C_Cpp.clang_format_style": "{ BasedOnStyle: LLVM, IndentWidth: 4, BreakBeforeBraces: Attach}"
