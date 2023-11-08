@@ -1,3 +1,5 @@
+all: server client
+
 server: dep
 	gcc *.o fifo_seqnum_server.c -o server
 

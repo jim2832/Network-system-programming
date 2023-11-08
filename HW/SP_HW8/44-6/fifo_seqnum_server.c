@@ -49,10 +49,26 @@ main(int argc, char *argv[])
 
         snprintf(clientFifo, CLIENT_FIFO_NAME_LEN, CLIENT_FIFO_TEMPLATE,
                 (long) req.pid);
+        // set O_NONBLOCK flag
         clientFd = open(clientFifo, O_WRONLY);
         if (clientFd == -1) {           /* Open failed, give up on client */
             errMsg("open %s", clientFifo);
             continue;
+        }
+
+        // add O_NONBLOCK flag by fcntl
+        int flags = fcntl(clientFd, F_GETFL);
+        if (flags == -1) {
+            perror("Error getting file flags");
+            close(clientFd);
+            return 1;
+        }
+
+        flags |= O_NONBLOCK;
+        if (fcntl(clientFd, F_SETFL, flags) == -1) {
+            perror("Error setting O_NONBLOCK flag");
+            close(clientFd);
+            return 1;
         }
 
         /* Send response and close FIFO */
