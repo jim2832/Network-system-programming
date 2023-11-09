@@ -12,20 +12,15 @@
 
 static int clientId;
 
-static void
-removeQueue(void)
-{
+static void removeQueue(void){
     if (msgctl(clientId, IPC_RMID, NULL) == -1)
         errExit("msgctl");
 }
 
-int
-main(int argc, char *argv[])
-{
-    struct requestMsg req;
-    struct responseMsg resp;
-    int serverId, numMsgs;
-    ssize_t msgLen, totBytes;
+int main(int argc, char *argv[]){
+    struct requestMsg req; // Request message to send to server
+    struct responseMsg resp; // Response message received from server
+    int serverId, numMsgs; // ID of server's queue, number of messages received
 
     if (argc != 2 || strcmp(argv[1], "--help") == 0)
         usageErr("%s pathname\n", argv[0]);
@@ -49,7 +44,6 @@ main(int argc, char *argv[])
 
     /* Send message asking for file named in argv[1] */
 
-    req.mtype = 1;                      /* Any type will do */
     req.clientId = clientId;
     strncpy(req.pathname, argv[1], sizeof(req.pathname) - 1);
     req.pathname[sizeof(req.pathname) - 1] = '\0';
@@ -60,7 +54,7 @@ main(int argc, char *argv[])
 
     /* Get first response, which may be failure notification */
 
-    msgLen = msgrcv(clientId, &resp, RESP_MSG_SIZE, 0, 0);
+    ssize_t msgLen = msgrcv(clientId, &resp, RESP_MSG_SIZE, 0, 0);
     if (msgLen == -1)
         errExit("msgrcv");
 
@@ -72,7 +66,7 @@ main(int argc, char *argv[])
     /* File was opened successfully by server; process messages
        (including the one already received) containing file data */
 
-    totBytes = msgLen;                  /* Count first message */
+    ssize_t totBytes = msgLen;                  /* Count first message */
     for (numMsgs = 1; resp.mtype == RESP_MT_DATA; numMsgs++) {
         msgLen = msgrcv(clientId, &resp, RESP_MSG_SIZE, 0, 0);
         if (msgLen == -1)

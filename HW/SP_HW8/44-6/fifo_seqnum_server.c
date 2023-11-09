@@ -49,7 +49,6 @@ main(int argc, char *argv[])
 
         snprintf(clientFifo, CLIENT_FIFO_NAME_LEN, CLIENT_FIFO_TEMPLATE,
                 (long) req.pid);
-        // set O_NONBLOCK flag
         clientFd = open(clientFifo, O_WRONLY);
         if (clientFd == -1) {           /* Open failed, give up on client */
             errMsg("open %s", clientFifo);

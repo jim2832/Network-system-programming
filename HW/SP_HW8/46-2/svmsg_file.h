@@ -25,7 +25,6 @@
 #define SERVER_KEY 0x1aaaaaa1           /* Key for server's message queue */
 
 struct requestMsg {                     /* Requests (client to server) */
-    long mtype;                         /* Unused */
     int  clientId;                      /* ID of client's message queue */
     char pathname[PATH_MAX];            /* File to be returned */
 };

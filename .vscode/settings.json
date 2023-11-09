@@ -8,7 +8,9 @@
         "signal.h": "c",
         "new_version.h": "c",
         "time.h": "c",
-        "*.inc": "c"
+        "*.inc": "c",
+        "fifo_seqnum.h": "c",
+        "svmsg_file.h": "c"
     },
 
     "C_Cpp.clang_format_style": "{ BasedOnStyle: LLVM, IndentWidth: 4, BreakBeforeBraces: Attach}"

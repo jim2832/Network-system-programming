@@ -28,25 +28,18 @@
 */
 #include "svmsg_file.h"
 
-static void             /* SIGCHLD handler */
-grimReaper(int sig)
-{
-    int savedErrno;
-
-    savedErrno = errno;                 /* waitpid() might change 'errno' */
-    while (waitpid(-1, NULL, WNOHANG) > 0)
-        continue;
+/* SIGCHLD handler */
+static void handler(int sig){
+    int savedErrno = errno;                 /* waitpid() might change 'errno' */
+    while (waitpid(-1, NULL, WNOHANG) > 0) continue;
     errno = savedErrno;
 }
 
-static void             /* Executed in child process: serve a single client */
-serveRequest(const struct requestMsg *req)
-{
-    int fd;
-    ssize_t numRead;
+/* Executed in child process: serve a single client */
+static void serveRequest(const struct requestMsg *req){
     struct responseMsg resp;
 
-    fd = open(req->pathname, O_RDONLY);
+    int fd = open(req->pathname, O_RDONLY);
     if (fd == -1) {                     /* Open failed: send error text */
         resp.mtype = RESP_MT_FAILURE;
         snprintf(resp.data, sizeof(resp.data), "%s", "Couldn't open");
@@ -58,6 +51,7 @@ serveRequest(const struct requestMsg *req)
        diagnose read() and msgsnd() errors since we can't notify client. */
 
     resp.mtype = RESP_MT_DATA;
+    ssize_t numRead;
     while ((numRead = read(fd, resp.data, RESP_MSG_SIZE)) > 0)
         if (msgsnd(req->clientId, &resp, numRead, 0) == -1)
             break;
@@ -68,34 +62,32 @@ serveRequest(const struct requestMsg *req)
     msgsnd(req->clientId, &resp, 0, 0);         /* Zero-length mtext */
 }
 
-int
-main(int argc, char *argv[])
-{
-    struct requestMsg req;
-    pid_t pid;
-    ssize_t msgLen;
-    int serverId;
+int main(int argc, char *argv[]){
     struct sigaction sa;
 
     /* Create server message queue */
-
+    int serverId;
     serverId = msgget(SERVER_KEY, IPC_CREAT | IPC_EXCL |
                             S_IRUSR | S_IWUSR | S_IWGRP);
-    if (serverId == -1)
+    if(EEXIST == errno) // server already exists
+        serverId = msgget(SERVER_KEY, S_IWUSR);
+    else if (serverId == -1) // error
         errExit("msgget");
 
-    /* Establish SIGCHLD handler to reap terminated children */
 
+    /* Establish SIGCHLD handler to reap terminated children */
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
-    sa.sa_handler = grimReaper;
+    sa.sa_handler = handler;
     if (sigaction(SIGCHLD, &sa, NULL) == -1)
         errExit("sigaction");
 
+
     /* Read requests, handle each in a separate child process */
 
-    for (;;) {
-        msgLen = msgrcv(serverId, &req, REQ_MSG_SIZE, 0, 0);
+    while(1) {
+        struct requestMsg req;
+        ssize_t msgLen = msgrcv(serverId, &req, REQ_MSG_SIZE, 0, 0);
         if (msgLen == -1) {
             if (errno == EINTR)         /* Interrupted by SIGCHLD handler? */
                 continue;               /* ... then restart msgrcv() */
@@ -103,7 +95,7 @@ main(int argc, char *argv[])
             break;                      /* ... so terminate loop */
         }
 
-        pid = fork();                   /* Create child process */
+        pid_t pid = fork();                   /* Create child process */
         if (pid == -1) {
             errMsg("fork");
             break;
