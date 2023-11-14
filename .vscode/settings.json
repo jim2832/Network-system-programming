@@ -10,7 +10,8 @@
         "time.h": "c",
         "*.inc": "c",
         "fifo_seqnum.h": "c",
-        "svmsg_file.h": "c"
+        "svmsg_file.h": "c",
+        "system_error": "c"
     },
 
     "C_Cpp.clang_format_style": "{ BasedOnStyle: LLVM, IndentWidth: 4, BreakBeforeBraces: Attach}"
