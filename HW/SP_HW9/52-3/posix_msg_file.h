@@ -22,10 +22,10 @@
 #include <sys/wait.h>
 #include "tlpi_hdr.h"
 
-#define SERVER_KEY 0x1aaaaaa1           /* Key for server's message queue */
+#define SERVER_KEY "/server_key"           /* Key for server's message queue */
 
 struct requestMsg {                     /* Requests (client to server) */
-    int  clientId;                      /* ID of client's message queue */
+    char clientId[PATH_MAX];            /* ID of client's message queue */
     char pathname[PATH_MAX];            /* File to be returned */
 };
 

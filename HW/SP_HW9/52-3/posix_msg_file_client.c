@@ -1,27 +1,25 @@
-/*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2023.                   *
-*                                                                         *
-* This program is free software. You may use, modify, and redistribute it *
-* under the terms of the GNU General Public License as published by the   *
-* Free Software Foundation, either version 3 or (at your option) any      *
-* later version. This program is distributed without any warranty.  See   *
-* the file COPYING.gpl-v3 for details.                                    *
-\*************************************************************************/
-
+#define _GNU_SOURCE
+#include <mqueue.h>
+#include <sys/msg.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "posix_msg_file.h"
+#define CLIENT_KEY "/client_key"
 
-static int clientId;
+mqd_t clientMQ; // ID of client's queue
 
 static void removeQueue(void){
-    if (msgctl(clientId, IPC_RMID, NULL) == -1)
+    if (msgctl(clientMQ, IPC_RMID, NULL) == -1)
         errExit("msgctl");
 }
 
 int main(int argc, char *argv[]){
     struct requestMsg req; // Request message to send to server
     struct responseMsg resp; // Response message received from server
-    int serverId, numMsgs; // ID of server's queue, number of messages received
+    mqd_t serverMQ; // ID of server's queue
+    int numMsgs; // number of messages received
 
+    // error check
     if (argc != 2 || strcmp(argv[1], "--help") == 0)
         usageErr("%s pathname\n", argv[0]);
 
@@ -31,32 +29,33 @@ int main(int argc, char *argv[]){
 
     /* Get server's queue identifier; create queue for response */
 
-    serverId = msgget(SERVER_KEY, S_IWUSR);
-    if (serverId == -1)
+    serverMQ = mq_open(SERVER_KEY, O_RDWR);
+    if (serverMQ == -1)
         errExit("msgget - server message queue");
 
-    clientId = msgget(IPC_PRIVATE, S_IRUSR | S_IWUSR | S_IWGRP);
-    if (clientId == -1)
+    clientMQ = mq_open(CLIENT_KEY, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR, NULL);
+    if(EEXIST == errno && clientMQ == -1){ // if client queue already exists
+        clientMQ = mq_open(CLIENT_KEY, O_RDWR, S_IRUSR | S_IWUSR, NULL);
+    }
+    else if (clientMQ == -1)
         errExit("msgget - client message queue");
-
-    if (atexit(removeQueue) != 0)
-        errExit("atexit");
 
     /* Send message asking for file named in argv[1] */
 
-    req.clientId = clientId;
+    strcpy(req.clientId, CLIENT_KEY);
     strncpy(req.pathname, argv[1], sizeof(req.pathname) - 1);
     req.pathname[sizeof(req.pathname) - 1] = '\0';
                                         /* Ensure string is terminated */
 
-    if (msgsnd(serverId, &req, REQ_MSG_SIZE, 0) == -1)
-        errExit("msgsnd");
+    if(mq_send(serverMQ, (char *) &req, sizeof(struct requestMsg), 0) == -1) // send request to server
+        errExit("mq_send");
+    mq_close(serverMQ); // close server MQ
 
     /* Get first response, which may be failure notification */
 
-    ssize_t msgLen = msgrcv(clientId, &resp, RESP_MSG_SIZE, 0, 0);
+    ssize_t msgLen = mq_receive(clientMQ, (char *) &resp, sizeof(struct responseMsg), 0);
     if (msgLen == -1)
-        errExit("msgrcv");
+        errExit("mq_receive");
 
     if (resp.mtype == RESP_MT_FAILURE) {
         printf("%s\n", resp.data);      /* Display msg from server */
@@ -68,7 +67,7 @@ int main(int argc, char *argv[]){
 
     ssize_t totBytes = msgLen;                  /* Count first message */
     for (numMsgs = 1; resp.mtype == RESP_MT_DATA; numMsgs++) {
-        msgLen = msgrcv(clientId, &resp, RESP_MSG_SIZE, 0, 0);
+        msgLen = msgrcv(clientMQ, &resp, sizeof(struct responseMsg), 0, 0);
         if (msgLen == -1)
             errExit("msgrcv");
 
@@ -76,6 +75,9 @@ int main(int argc, char *argv[]){
     }
 
     printf("Received %ld bytes (%d messages)\n", (long) totBytes, numMsgs);
+
+    mq_close(clientMQ); // close client MQ
+    mq_unlink(CLIENT_KEY); // unlink client MQ
 
     exit(EXIT_SUCCESS);
 }

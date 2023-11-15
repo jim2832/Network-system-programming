@@ -11,7 +11,8 @@
         "*.inc": "c",
         "fifo_seqnum.h": "c",
         "svmsg_file.h": "c",
-        "system_error": "c"
+        "system_error": "c",
+        "typeinfo": "c"
     },
 
     "C_Cpp.clang_format_style": "{ BasedOnStyle: LLVM, IndentWidth: 4, BreakBeforeBraces: Attach}"
