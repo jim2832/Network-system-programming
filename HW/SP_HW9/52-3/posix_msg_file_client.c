@@ -4,7 +4,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "posix_msg_file.h"
-#define CLIENT_KEY "/client_key"
+#define CLIENT_KEY "/key"
 
 mqd_t clientMQ; // ID of client's queue
 
@@ -14,7 +14,7 @@ static void removeQueue(void){
 }
 
 int main(int argc, char *argv[]){
-    struct requestMsg req; // Request message to send to server
+    // struct requestMsg req; // Request message to send to server
     struct responseMsg resp; // Response message received from server
     mqd_t serverMQ; // ID of server's queue
     int numMsgs; // number of messages received
@@ -23,9 +23,8 @@ int main(int argc, char *argv[]){
     if (argc != 2 || strcmp(argv[1], "--help") == 0)
         usageErr("%s pathname\n", argv[0]);
 
-    if (strlen(argv[1]) > sizeof(req.pathname) - 1)
-        cmdLineErr("pathname too long (max: %ld bytes)\n",
-                (long) sizeof(req.pathname) - 1);
+    if (strlen(argv[1]) > 4095)
+        cmdLineErr("pathname too long (max: %ld bytes)\n", 4095);
 
     /* Get server's queue identifier; create queue for response */
 
@@ -42,10 +41,13 @@ int main(int argc, char *argv[]){
 
     /* Send message asking for file named in argv[1] */
 
-    strcpy(req.clientId, CLIENT_KEY);
-    strncpy(req.pathname, argv[1], sizeof(req.pathname) - 1);
-    req.pathname[sizeof(req.pathname) - 1] = '\0';
-                                        /* Ensure string is terminated */
+    // strcpy(req.clientId, CLIENT_KEY);
+    // strncpy(req.pathname, argv[1], sizeof(req.pathname) - 1);
+    // req.pathname[sizeof(req.pathname) - 1] = '\0';
+    //                                     /* Ensure string is terminated */
+
+    struct requestMsg req = { .clientId = CLIENT_KEY, .pathname = {0}};
+    strcpy(req.pathname, argv[1]);
 
     if(mq_send(serverMQ, (char *) &req, sizeof(struct requestMsg), 0) == -1) // send request to server
         errExit("mq_send");

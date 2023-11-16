@@ -36,7 +36,7 @@ struct requestMsg {                     /* Requests (client to server) */
 #define REQ_MSG_SIZE (offsetof(struct requestMsg, pathname) - \
                       offsetof(struct requestMsg, clientId) + PATH_MAX)
 
-#define RESP_MSG_SIZE 8192
+#define RESP_MSG_SIZE 8192-4
 
 struct responseMsg {                    /* Responses (server to client) */
     long mtype;                         /* One of RESP_MT_* values below */
