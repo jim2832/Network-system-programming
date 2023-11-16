@@ -49,8 +49,13 @@ main(int argc, char *argv[])
 
     /* Give writer one more turn, so it can clean up */
 
+    // wait for writer to finish
     if (releaseSem(semid, WRITE_SEM) == -1)
         errExit("releaseSem");
+    
+    // unmap shared memory
+    if(munmap(shmp, sizeof(struct shmseg)) == -1)
+        errExit("munmap");
 
     fprintf(stderr, "Received %d bytes (%d xfrs)\n", bytes, xfrs);
     exit(EXIT_SUCCESS);
