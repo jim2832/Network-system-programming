@@ -8,7 +8,9 @@
 * the file COPYING.gpl-v3 for details.                                    *
 \*************************************************************************/
 
-#include "svshm_xfr.h"
+#include "posix_shm_xfr.h"
+#include <sys/mman.h>
+#define _GNU_SOURCE
 
 int
 main(int argc, char *argv[])
@@ -22,13 +24,11 @@ main(int argc, char *argv[])
     if (semid == -1)
         errExit("semget");
 
-    shmid  = shmget(SHM_KEY, 0, 0);
+    shmid = shm_open(SHM_KEY, 0, 0); // open shared memory object
     if (shmid == -1)
-        errExit("shmget");
+        errExit("shm_open");
 
-    shmp = shmat(shmid, NULL, SHM_RDONLY);
-    if (shmp == (void *) -1)
-        errExit("shmat");
+    shmp = mmap(NULL, sizeof(struct shmseg), PROT_READ, MAP_SHARED, shmid, 0); // attach at address chosen by system
 
     /* Transfer blocks of data from shared memory to stdout */
 
@@ -46,9 +46,6 @@ main(int argc, char *argv[])
         if (releaseSem(semid, WRITE_SEM) == -1)         /* Give writer a turn */
             errExit("releaseSem");
     }
-
-    if (shmdt(shmp) == -1)
-        errExit("shmdt");
 
     /* Give writer one more turn, so it can clean up */
 

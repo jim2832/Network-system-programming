@@ -15,7 +15,7 @@
 #include "binary_sems.h"        /* Declares our binary semaphore functions */
 #include "tlpi_hdr.h"
 
-#define SHM_KEY 0x1234          /* Key for shared memory segment */
+#define SHM_KEY "/0x1234"          /* Key for shared memory segment */
 #define SEM_KEY 0x5678          /* Key for semaphore set */
 
 #define OBJ_PERMS (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)

@@ -29,7 +29,10 @@
         $ svshm_xfr_reader > out_file
 */
 #include "semun.h"              /* Definition of semun union */
-#include "svshm_xfr.h"
+#include "posix_shm_xfr.h"
+#include <fcntl.h>
+#include <sys/mman.h>
+#define _GNU_SOURCE             /* Get strsignal() declaration from <string.h> */
 
 int
 main(int argc, char *argv[])
@@ -52,13 +55,20 @@ main(int argc, char *argv[])
 
     /* Create shared memory; attach at address chosen by system */
 
-    shmid = shmget(SHM_KEY, sizeof(struct shmseg), IPC_CREAT | OBJ_PERMS);
+    // create shared memory object
+    shmid = shm_open(SHM_KEY, O_CREAT | O_RDWR, OBJ_PERMS);
     if (shmid == -1)
-        errExit("shmget");
+        errExit("shm_open");
 
-    shmp = shmat(shmid, NULL, 0);
-    if (shmp == (void *) -1)
-        errExit("shmat");
+    // set size of shared memory object
+    ftruncate(shmid, sizeof(struct shmseg));
+    if(shmid == -1)
+        errExit("ftruncate");
+
+    // map shared memory object
+    shmp = mmap(NULL, sizeof(struct shmseg), PROT_READ | PROT_WRITE, MAP_SHARED, shmid, 0);
+    if (shmp == MAP_FAILED)
+        errExit("mmap");
 
     /* Transfer blocks of data from stdin to shared memory */
 
@@ -83,15 +93,21 @@ main(int argc, char *argv[])
     /* Wait until reader has let us have one more turn. We then know
        reader has finished, and so we can delete the IPC objects. */
 
+    // wait for reader to finish
     if (reserveSem(semid, WRITE_SEM) == -1)
         errExit("reserveSem");
 
+    // delete semaphore set
     if (semctl(semid, 0, IPC_RMID, dummy) == -1)
         errExit("semctl");
-    if (shmdt(shmp) == -1)
-        errExit("shmdt");
-    if (shmctl(shmid, IPC_RMID, NULL) == -1)
-        errExit("shmctl");
+
+    // unmap shared memory object
+    if(munmap(shmp, sizeof(struct shmseg)) == -1)
+        errExit("munmap");
+
+    // delete shared memory object
+    if(shm_unlink(SHM_KEY) == -1)
+        errExit("shm_unlink");
 
     fprintf(stderr, "Sent %d bytes (%d xfrs)\n", bytes, xfrs);
     exit(EXIT_SUCCESS);
