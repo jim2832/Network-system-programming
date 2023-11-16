@@ -14,11 +14,10 @@ static void handler(int sig){
 
 /* Executed in child process: serve a single client */
 static void serveRequest(const struct requestMsg *req){
-    struct responseMsg resp;
-    
     mqd_t clientMQ = mq_open(req->pathname, O_RDWR); // open client MQ
     int fd = open(req->pathname, O_RDONLY);
     if (fd == -1) {                     /* Open failed: send error text */
+        struct responseMsg resp;
         resp.mtype = RESP_MT_FAILURE;
         snprintf(resp.data, sizeof(resp.data), "%s", "Couldn't open");
         mq_send(clientMQ, (char *) &resp, strlen(resp.data) + 1, 0);
@@ -29,16 +28,17 @@ static void serveRequest(const struct requestMsg *req){
     /* Transmit file contents in messages with type RESP_MT_DATA. We don't
        diagnose read() and msgsnd() errors since we can't notify client. */
 
+    struct responseMsg resp;
     resp.mtype = RESP_MT_DATA;
     ssize_t numRead;
     while ((numRead = read(fd, resp.data, RESP_MSG_SIZE)) > 0)
-        if (mq_send(clientMQ, (char *) &resp, numRead, 0) == -1)
+        if (mq_send(clientMQ, (char *) &resp, sizeof(struct responseMsg), 0) == -1)
             break;                      /* Exit loop on error */
 
     /* Send a message of type RESP_MT_END to signify end-of-file */
 
     resp.mtype = RESP_MT_END;
-    mq_send(clientMQ, (char *) &resp, 0, 0);    /* Zero-length mtext */
+    mq_send(clientMQ, (char *) &resp, sizeof(struct responseMsg), 0);    /* Zero-length mtext */
     mq_close(clientMQ);                         /* Close client message queue */        
 }
 

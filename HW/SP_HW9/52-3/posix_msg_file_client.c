@@ -4,18 +4,33 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "posix_msg_file.h"
-#define CLIENT_KEY "/key"
+#define CLIENT_KEY "/client_key"
 
 mqd_t clientMQ; // ID of client's queue
 
 static void removeQueue(void){
-    if (msgctl(clientMQ, IPC_RMID, NULL) == -1)
-        errExit("msgctl");
+    if(mq_close(clientMQ) == -1)
+        errExit("mq_close");
+}
+
+/* SIGCHLD handler */
+static void handler(int sig){
+    int savedErrno = errno;                 /* waitpid() might change 'errno' */
+    while (waitpid(-1, NULL, WNOHANG) > 0) continue;
+    errno = savedErrno;
 }
 
 int main(int argc, char *argv[]){
+    struct sigaction sa;
+    /* Establish SIGCHLD handler to reap terminated children */
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    sa.sa_handler = handler;
+    if (sigaction(SIGCHLD, &sa, NULL) == -1)
+        errExit("sigaction");
+
     // struct requestMsg req; // Request message to send to server
-    struct responseMsg resp; // Response message received from server
+    // struct responseMsg resp; // Response message received from server
     mqd_t serverMQ; // ID of server's queue
     int numMsgs; // number of messages received
 
@@ -39,6 +54,8 @@ int main(int argc, char *argv[]){
     else if (clientMQ == -1)
         errExit("msgget - client message queue");
 
+    if (atexit(removeQueue) != 0) // register exit function
+        errExit("atexit");
     /* Send message asking for file named in argv[1] */
 
     // strcpy(req.clientId, CLIENT_KEY);
@@ -55,6 +72,7 @@ int main(int argc, char *argv[]){
 
     /* Get first response, which may be failure notification */
 
+    struct responseMsg resp = {.mtype = RESP_MT_DATA, .data = {0}};
     ssize_t msgLen = mq_receive(clientMQ, (char *) &resp, sizeof(struct responseMsg), 0);
     if (msgLen == -1)
         errExit("mq_receive");
@@ -63,6 +81,7 @@ int main(int argc, char *argv[]){
         printf("%s\n", resp.data);      /* Display msg from server */
         exit(EXIT_FAILURE);
     }
+
 
     /* File was opened successfully by server; process messages
        (including the one already received) containing file data */
