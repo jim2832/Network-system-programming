@@ -36,14 +36,12 @@ of insurance in $1000 units available. */
 #define MOVER_SEM 1
 #define INSUR_SEM 2
 
-/* These are used to initialize semaphores with
-total resources managed. */
+/* These are used to initialize semaphores with total resources managed. */
 #define NUM_TRUCKS 5
 #define NUM_MOVERS 12
 #define AMT_INSUR 1000
 
-/* Flags passed thru sembuf structure; wait for
-resource. */
+/* Flags passed thru sembuf structure; wait for resource. */
 #define WAIT 0
 #define STRING_SIZE 80
 #define FALSE 0
@@ -81,6 +79,7 @@ main() {
     /**************************************************/
     /* Array of threads, one per request. */
     pthread_t threads[NUM_THREADS];
+
     /* Needed to convert constant for semctl call.*/
     int numTrucks = NUM_TRUCKS;
     int numMovers = NUM_MOVERS;
@@ -95,8 +94,7 @@ main() {
         exit(errno);
     }
 
-    /* Initialize each semaphore in the group.
-    Could also have used SETALL. */
+    /* Initialize each semaphore in the group. Could also have used SETALL. */
     if ((semctl(semid, TRUCK_SEM, SETVAL, &numTrucks)) ||
         (semctl(semid, MOVER_SEM, SETVAL, &numMovers)) ||
         (semctl(semid, INSUR_SEM, SETVAL, &amtInsur))) {
@@ -104,18 +102,14 @@ main() {
         goto cleanup;
     }
 
-    /* Initialize random number generator used for time
-    delays. */
+    /* Initialize random number generator used for time delays. */
     srand48(time(NULL));
 
-    /* Spawn the threads. The argument passed to
-    threadMain is a job table index, so multiple
-    requests can be made using the same table entry
-    when the index wraps. Delay to model jobs being
+    /* Spawn the threads. The argument passed to threadMain is a job table index, so multiple
+    requests can be made using the same table entry when the index wraps. Delay to model jobs being
     staggered instead of coming all at once. */
     for (count = 0; count < NUM_THREADS; count++) {
-        if (pthread_create(&threads[count], NULL, threadMain,
-                           (void *)(count % numJobs))) {
+        if (pthread_create(&threads[count], NULL, threadMain, (void *)(count % numJobs))) {
             perror("Error starting reader threads");
             goto cleanup;
         }
@@ -139,7 +133,7 @@ cleanup:
 
 void *threadMain(void *arg) {
 
-    *************************************************
+    /*************************************************
     Here is where a thread starts executing. A
     thread in executing this function represents a
     task for the moving company, and requests the
@@ -170,6 +164,7 @@ void *threadMain(void *arg) {
 
     /* Delay to simulate the time the resources are in use. */
     fractSleep(drand48() * RUNTIME_RANGE);
+
     sprintf(string, "Job # %d done; returning %d trucks, %d people, %d000 insurance...\n",
             jobNum, jobTable[jobNum].numTrucks, jobTable[jobNum].numMovers, jobTable[jobNum].amtInsurance);
     printWithTime(string);
@@ -184,11 +179,11 @@ void *threadMain(void *arg) {
 /*************************************************/
 int reserve(int semid, struct job thisJob) {
     /************************************************
-
     Reserve resources required for a job. This wrapper function passes negative values into
     playWithSemaphores(), since negative values represent resource allocations.
     /***************************************************/
 
+    // reserver the resouce by minus the free resource
     return (playWithSemaphores(semid, -thisJob.numTrucks, -thisJob.numMovers, -thisJob.amtInsurance));
 }
 
@@ -201,6 +196,7 @@ int release(int semid, struct job thisJob) {
     represent resource deallocations.
     /***************************************************/
 
+    // release the resource by add the free resource
     return (playWithSemaphores(semid, thisJob.numTrucks, thisJob.numMovers, thisJob.amtInsurance));
 }
 
@@ -227,7 +223,8 @@ static int playWithSemaphores(int semid, int numTrucks, int numMovers, int amtIn
     ops[0].sem_op = numTrucks;
     ops[1].sem_num = MOVER_SEM;
     ops[1].sem_op = numMovers;
-    ops[2].sem_num = INSUR_SEM ops[2].sem_op = amtInsurance;
+    ops[2].sem_num = INSUR_SEM;
+    ops[2].sem_op = amtInsurance;
 
     /* All semaphore operations are to be handled in the same way. */
     ops[0].sem_flg = ops[1].sem_flg = ops[2].sem_flg = WAIT;
