@@ -4,145 +4,118 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <pthread.h>
 #include <sys/wait.h>
-#include "semun.h"
-#include "svshm_xfr.h"
 
 #define STACK_SIZE 3
 
-typedef struct{
-    int stack[STACK_SIZE];
-    int top;
-} Stack;
+int *stack;
+pthread_mutex_t mutex;
 
-void push(Stack* stack, int value){
-    stack->stack[stack->top] = value;
-    stack->top++;
+void push(int value){
+    pthread_mutex_lock(&mutex); // Lock the mutex
+    if(stack[STACK_SIZE - 1] != 0){
+        printf("Stack is full. Cannot push %d.\n", value);
+    }
+    else{
+        // Find the first available slot
+        for(int i=0; i<STACK_SIZE; i++){
+            if(stack[i] == 0){
+                stack[i] = value;
+                printf("Process %d pushed %d to stack.\n", getpid(), value);
+                break;
+            }
+        }
+    }
+    pthread_mutex_unlock(&mutex); // Unlock the mutex
 }
 
-int pop(Stack* stack){
-    stack->top--;
-    return stack->stack[stack->top];
+void pop(){
+    pthread_mutex_lock(&mutex); // Lock the mutex
+    if(stack[0] == 0){
+        printf("Stack is empty. Cannot pop.\n");
+    }
+    else{
+        // Find the topmost element and pop it
+        for(int i=STACK_SIZE-1; i>=0; i--){
+            if(stack[i] != 0){
+                printf("Process %d popped %d from stack.\n", getpid(), stack[i]);
+                stack[i] = 0;
+                break;
+            }
+        }
+    }
+    pthread_mutex_unlock(&mutex); // Unlock the mutex
 }
 
-int main(int argc, char* argv[]){
+int main(int argc, char *argv[]){
     if(argc != 2){
-        printf("Usage: %s <process_count>\n", argv[0]);
-        return 1;
+        fprintf(stderr, "Usage: %s <process number>\n", argv[0]);
+        exit(EXIT_FAILURE);
     }
 
-    int process_count = atoi(argv[1]); // number of processes to create
-
-    // // semaphores
-    // int semid = semget(SEM_KEY, 2, IPC_CREAT | OBJ_PERMS);
-    // if (semid == -1){
-    //     perror("semget");
-    //     return 1;
-    // }
-
-    // // initialize semaphore
-    // if (initSemAvailable(semid, WRITE_SEM) == -1){
-    //     perror("initSemAvailable");
-    //     return 1;
-    // }
-    // if (initSemInUse(semid, READ_SEM) == -1){
-    //     perror("initSemInUse");
-    //     return 1;
-    // }
+    int num_processes = atoi(argv[1]); // number of processes to create
 
     // Create shared memory for the stack
     key_t key = ftok("/tmp", 'A');
-    int shmid = shmget(key, sizeof(Stack), IPC_CREAT | 0666);
+    int shmid = shmget(key, STACK_SIZE * sizeof(int), IPC_CREAT | 0666);
     if(shmid == -1){
         perror("shmget");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     // Attach to shared memory
-    Stack* stack = (Stack*)shmat(shmid, NULL, 0);
-    if(stack == (Stack*)-1){
+    stack =(int *)shmat(shmid, NULL, 0);
+    if(stack == (int *)-1){
         perror("shmat");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
-    // Initialize stack
-    stack->top = 0;
+    // Initialize the stack
+    for(int i=0; i<STACK_SIZE; i++){
+        stack[i] = 0;
+    }
 
-    // Fork child processes
-    for(int i=0; i<process_count; i++){
-        pid_t pid = fork();
+    // Initialize mutex
+    pthread_mutex_init(&mutex, NULL);
 
-        // fork error
-        if(pid == -1){
-            perror("fork");
-            return 1;
+    // Fork processes
+    for(int i=0; i<num_processes; i++){
+        pid_t pid = fork(); // Fork a child process
+
+        // Fork failed
+        if(pid < 0){
+            perror("Fork failed");
+            exit(EXIT_FAILURE);
         }
-        
-        // child process
+
+        // Child process
         else if(pid == 0){
-            srand(getpid());
+            srand(getpid()); // Seed for random numbers
 
-            // Push or pop from the stack
-            int operation = rand() % 2;
-
-            // Push
-            if(operation == 0){
-                int value = rand() % 100;
-
-                // // Wait for our turn
-                // if(reserveSem(semid, WRITE_SEM) == -1){
-                //     perror("reserveSem");
-                //     return 1;
-                // }
-
-                if(stack->top < STACK_SIZE){
-                    printf("Child %d pushing %d\n", getpid(), value);
-                    push(stack, value);
-                }
-                else{
-                    printf("Child %d can't push because stack is full\n", getpid());
-                }
-
-                // // Give popper a turn
-                // if(releaseSem(semid, READ_SEM) == -1){
-                //     perror("releaseSem");
-                //     return 1;
-                // }
+            // Push operation
+            if(rand() % 2 == 0){
+                int value = rand() % num_processes + 1;
+                push(value);
             }
 
-            // Pop
+            // Pop operation
             else{
-                // // Wait for our turn
-                // if(reserveSem(semid, READ_SEM) == -1){
-                //     perror("reserveSem");
-                //     return 1;
-                // }
-
-                if(stack->top > 0){
-                    int value = pop(stack);
-                    printf("Child %d popping %d\n", getpid(), value);
-                }
-                else{
-                    printf("Child %d can't pop because stack is empty\n", getpid());
-                }
-
-                // // Give pusher a turn
-                // if(releaseSem(semid, WRITE_SEM) == -1){
-                //     perror("releaseSem");
-                //     return 1;
-                // }
+                pop();
             }
 
-            return 0;
+            exit(EXIT_SUCCESS);
         }
+        usleep(500000);
     }
 
-    // Wait for all child processes to finish
-    for(int i = 0; i < process_count; i++){
+    // Wait for all processes to finish
+    for(int i=0; i<num_processes; i++){
         wait(NULL);
     }
 
-    // Detach and remove shared memory
+    // Clean up
+    pthread_mutex_destroy(&mutex);
     shmdt(stack);
     shmctl(shmid, IPC_RMID, NULL);
 

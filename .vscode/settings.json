@@ -13,7 +13,8 @@
         "svmsg_file.h": "c",
         "system_error": "c",
         "typeinfo": "c",
-        "svshm_xfr.h": "c"
+        "svshm_xfr.h": "c",
+        "ipc.h": "c"
     },
 
     "C_Cpp.clang_format_style": "{ BasedOnStyle: LLVM, IndentWidth: 4, BreakBeforeBraces: Attach}"
