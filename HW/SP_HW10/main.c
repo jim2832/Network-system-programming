@@ -45,24 +45,23 @@ int main(int argc, char *argv[]){
     int buffer_size = atoi(argv[4]); // buffer size
 
     // create shared memory (system v)
+    key_t shm_key = ftok(".", 'a');
+
     int shmid;
-    if((shmid = shmget(IPC_PRIVATE, (buffer_size+1) * sizeof(Shared_memory), IPC_CREAT | 0666)) < 0){ // +1 for producer
+    if((shmid = shmget(shm_key, (buffer_size+1) * sizeof(Shared_memory), IPC_CREAT | 0666)) < 0){ // +1 for producer
         perror("shmget");
         exit(EXIT_FAILURE);
     }
 
     // attach shared memory
-    Shared_memory *shm;
-    if((shm = shmat(shmid, NULL, 0)) == (void*)-1){
+    Shared_memory *shm = (Shared_memory*)shmat(shmid, NULL, 0);
+    if(shm == (Shared_memory*)-1){
         perror("shmat");
         exit(EXIT_FAILURE);
     }
 
     // initialize shared memory
-    shm->data = 0;
-    for(int i = 0; i < 128; i++){
-        shm->buffer[i] = 0;
-    }
+    memset(shm, 0, (buffer_size+1) * sizeof(Shared_memory));
 
     // create consumers
     int temp = num_consumer;
