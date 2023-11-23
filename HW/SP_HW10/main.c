@@ -11,25 +11,7 @@
 #include "shared_memory.h"
 #define _GUN_SOURCE
 
-int calculate_lost(int num_data, int rate, int num_consumer){
-    int lost = 0;
-    siginfo_t info = {._sifields._rt.si_sigval.sival_int = 0};  // For optimization
-    sigset_t set;
-    sigemptyset(&set); // initialize set
-    sigaddset(&set, SIGUSR1); // add SIGUSR1 to set
-    sigprocmask(SIG_BLOCK, &set, NULL); // block SIGUSR1
-
-    const struct timespec timeout = {.tv_sec = log10(num_consumer) * num_data * rate / 1000};
-    for(int i=0; i<num_consumer; i++){
-        while(sigtimedwait(&set, &info, &timeout) == -1){
-            perror("sigwait");
-            goto end;
-        }
-        lost += info.si_value.sival_int;
-    }
-end:
-    return lost;
-}
+int calculate_lost(int, int, int);
 
 int main(int argc, char *argv[]){
     // Check arguments
@@ -75,20 +57,19 @@ int main(int argc, char *argv[]){
         }
         else if(pid == 0){
             // create consumer
-            struct Consumer consumer = {
-                .ID = temp,
-                .num_data = num_data,
-                .buffer_size = buffer_size,
-                .buf = shm,
-                .job = receive_data
-            };
+            struct Consumer consumer;
+            consumer.ID = temp;
+            consumer.num_data = num_data;
+            consumer.buffer_size = buffer_size;
+            consumer.buf = shm;
+            consumer.job = receive_data;
 
-            // run consumer
+            // receive data from shared memory
             int fail = consumer.job(&consumer);
-            union sigval value = {.sival_int = fail};
-            sigqueue(getppid(), SIGUSR1, value);
+            union sigval value;
+            value.sival_int = fail;
+            sigqueue(getppid(), SIGUSR1, value); // send signal to parent process
 
-            // exit child process
             exit(EXIT_SUCCESS);
         }
     }
@@ -101,24 +82,23 @@ int main(int argc, char *argv[]){
     }
     else if(pid == 0){
         // create producer
-        struct Producer producer = {
-            .num_data = num_data,
-            .delay = rate,
-            .buffer_size = buffer_size,
-            .buf = shm,
-            .job = send_data
-        };
+        struct Producer producer;
+        producer.num_data = num_data;
+        producer.delay = rate;
+        producer.buffer_size = buffer_size;
+        producer.buf = shm;
+        producer.job = send_data;
 
-        // run producer
+        // send data to shared memory
         producer.job(&producer);
 
-        // exit child process
         exit(EXIT_SUCCESS);
     }
 
     // calculate the number of total data and lost data
     int total = num_data * num_consumer;
     int lost = calculate_lost(num_data, rate, num_consumer);
+    int received = total - lost;
 
     // detach shared memory
     if(shmdt(shm) == -1){
@@ -131,14 +111,35 @@ int main(int argc, char *argv[]){
         exit(EXIT_FAILURE);
     }
 
-    int received = total - lost;
     // print the result
-    printf("M=%d  R=%dms  N=%d\n", num_data, rate, num_consumer);
-    puts("-------------------------");
-    printf("Total message: %d\n", total);
+    printf("M = %d  R = %d  N = %d\n", num_data, rate, num_consumer);
+    printf("---------------------------------------------\n");
+    printf("Total messages: %d\n", total);
     printf("Sum of received messages by all consumers: %d\n", received);
-    printf("Loss rate: %.5f%%\n", 1.0 - (double)received / total);
-    puts("-------------------------");
+    printf("Loss rate: %.3f%%\n", 1.0 - (double)received / total);
+    printf("---------------------------------------------\n");
 
     return 0;
+}
+
+
+// calculate the number of lost data    
+int calculate_lost(int num_data, int rate, int num_consumer){
+    int lost = 0;
+    siginfo_t info = {._sifields._rt.si_sigval.sival_int = 0};
+    sigset_t set;
+    sigemptyset(&set); // initialize set
+    sigaddset(&set, SIGUSR1); // add SIGUSR1 to set
+    sigprocmask(SIG_BLOCK, &set, NULL); // block SIGUSR1
+
+    const struct timespec timeout = {.tv_sec = log10(num_consumer) * num_data * rate / 1000}; // timeout for sigtimedwait
+    for(int i=0; i<num_consumer; i++){
+        while(sigtimedwait(&set, &info, &timeout) == -1){
+            perror("sigwait");
+            goto end;
+        }
+        lost += info.si_value.sival_int;
+    }
+end:
+    return lost;
 }

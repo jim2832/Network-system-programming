@@ -11,8 +11,7 @@ int receive_data(struct Consumer *consumer){
         int current = shm[i].data; // current data
 
         // if data is changed
-        if(current != prev_data){
-            // printf("Consumer %d: %s\n", consumer->ID, shm[i].buffer); // print data
+        if(current > prev_data){
             prev_data = current; // update previous data
             count++; // update count
         }

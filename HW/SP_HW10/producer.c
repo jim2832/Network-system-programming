@@ -17,4 +17,7 @@ void send_data(struct Producer *producer){
         delay(producer->delay); // delay for transmission rate
         write_data(&shm[i % producer->buffer_size], i);
     }
+
+    delay(producer->delay);
+    write_data(&shm[producer->num_data % producer->num_data], -1);
 }
