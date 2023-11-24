@@ -116,7 +116,7 @@ int main(int argc, char *argv[]){
     printf("---------------------------------------------\n");
     printf("Total messages: %d\n", total);
     printf("Sum of received messages by all consumers: %d\n", received);
-    printf("Loss rate: %.3f%%\n", 1.0 - (double)received / total);
+    printf("Loss rate: %.2f%%\n", 100 * (1.0 - (double)received / total));
     printf("---------------------------------------------\n");
 
     return 0;
