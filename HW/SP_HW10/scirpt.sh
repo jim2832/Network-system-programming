@@ -12,7 +12,7 @@ buffer_sizes=(1 2 3 4 5 6 7 8 9 10)
 echo Processing...
 
 
-# 第一題
+第一題
 echo -e "rate\tconsumer\tloss_rate" > question1
 for rate in "${rates[@]}"
 do
