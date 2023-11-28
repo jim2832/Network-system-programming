@@ -3,13 +3,19 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-/* Number of file descriptors to poll. */
-#define NUM_FDS_TO_POLL 2
-main() {
-    int udpsd1, udpsd2;
+#include <sys/un.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <netdb.h>
+#define NUM_FDS_TO_POLL 2 /* Number of file descriptors to poll. */
+
+int main() {
+    int udpsd1, udpsd2; /* UDP socket descriptors */
     struct sockaddr_in sin1;
     struct sockaddr_in sin2;
-    struct sockaddr_in returnAddr;
+    struct sockaddr_in returnAddr; /* Address of sender */
     int returnAddrSize;
 
     /* This array of struct pollfd defines fully
@@ -23,13 +29,15 @@ main() {
     sin1.sin_family = AF_INET;
     sin1.sin_port = htons(7000);
     sin1.sin_addr.s_addr = htonl(INADDR_ANY);
-    
+
     /* create one udp sd */
     udpsd1 = socket(AF_INET, SOCK_DGRAM, 0);
     if (udpsd1 == -1) {
         perror("udp socket");
         exit(errno);
     }
+
+    /* bind it to the port */
     if (bind(udpsd1, (struct sockaddr *)&sin1, sizeof(sin1)) == -1) {
         perror("tcp bind");
         exit(errno);
@@ -48,6 +56,8 @@ main() {
         perror("udp socket");
         exit(errno);
     }
+
+    /* bind it to the port */
     if (bind(udpsd2, (struct sockaddr *)&sin2, sizeof(sin2)) == -1) {
         perror("udp bind");
         exit(errno);
@@ -79,37 +89,33 @@ main() {
         if ((numfds = poll(fds, NUM_FDS_TO_POLL, -1)) < 0) {
             perror("poll");
             exit(errno);
-        } else {
+        }
+        else {
             printf("Poll returned % d fds to read.\n", numfds);
         }
+
         /* if udp sd ready, use it */
         if (fds[0].revents == POLLIN) {
             char buffer[80];
-            if (recvfrom(udpsd1, buffer, 80, 0, (struct sockaddr *)&returnAddr,
-                         &returnAddrSize) >= 0) {
+            if (recvfrom(udpsd1, buffer, 80, 0, (struct sockaddr *)&returnAddr, &returnAddrSize) >= 0) {
                 puts(buffer);
-            } else {
+            }
+            else {
                 perror("recvfrom");
             }
         }
+
         /* if udp sd ready, use it */
-
         if (fds[1].revents == POLLIN) {
-
             char buffer[80];
-
-            if (recvfrom(udpsd2, buffer, 80, 0,
-
-                         (struct sockaddr *)&returnAddr,
-
-                         &returnAddrSize) >= 0) {
-
+            if (recvfrom(udpsd2, buffer, 80, 0, (struct sockaddr *)&returnAddr, &returnAddrSize) >= 0) {
                 puts(buffer);
-
-            } else {
-
+            }
+            else {
                 perror("recvfrom");
             }
         }
     }
+
+    return 0;
 }
