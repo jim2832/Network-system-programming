@@ -10,6 +10,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <unistd.h>
+#include <errno.h>
+#include <stdio.h>
 
 #include "dict.h"
 
@@ -36,6 +39,7 @@ int lookup(Dictrec * sought, const char * resource) {
 
 		/* Open the dictionary.
 		 * Fill in code. */
+		fd = open(resource, O_RDONLY);
 
 		/* Get record count for building the tree. */
 		filsiz = lseek(fd,0L,SEEK_END);
@@ -43,11 +47,15 @@ int lookup(Dictrec * sought, const char * resource) {
 
 		/* mmap the data.
 		 * Fill in code. */
+		ftruncate(fd, filsiz);
+		table = (Dictrec*) mmap(NULL, filsiz, PROT_READ, MAP_SHARED, fd, 0);
 		close(fd);
 	}
     
 	/* search table using bsearch
 	 * Fill in code. */
+	found = (Dictrec*) bsearch(sought->word, table, numrec, sizeof(Dictrec), dict_cmp);
+
 	if (found) {
 		strcpy(sought->text,found->text);
 		return FOUND;

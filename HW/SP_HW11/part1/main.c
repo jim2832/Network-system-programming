@@ -13,26 +13,30 @@
  */
 
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "dict.h"
 
 int main(int argc, char **argv) {
 	FILE *in;
 	char word[WORD];
-	Dictrec tryit;
+	Dictrec try_it;
 
 	if (argc != 2) {
 		fprintf(stderr,"Usage : %s <resource>\n",argv[0]);
 		exit(errno);
 	}
 
-	while(fputs("What word do you want : ",stderr),gets(tryit.word)) {
-		switch(lookup(&tryit,argv[1]) ) {
+	while(fputs("What word do you want : ",stderr),fgets(try_it.word, WORD, stdin)) {
+		switch(lookup(&try_it,argv[1]) ) {
 			case FOUND:
-				printf("%s : %s",tryit.word,tryit.text);
+				printf("%s : %s",try_it.word,try_it.text);
 				break;
 			case NOTFOUND:
-				printf("%s : Not Found!\n",tryit.word) ;
+				printf("%s : Not Found!\n",try_it.word);
 				break;
 			case UNAVAIL:
 				DIE(argv[1]);
