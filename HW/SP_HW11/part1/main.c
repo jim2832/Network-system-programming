@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 	}
 
 	while(fputs("What word do you want : ",stderr),fgets(try_it.word, WORD, stdin)) {
-		try_it.word[strlen(try_it.word)-1] = '\0'; // remove \n
+		try_it.word[strlen(try_it.word)-1] = '\0'; // remove "\n"
 		switch(lookup(&try_it, argv[1]) ) {
 			case FOUND:
 				printf("%s : %s",try_it.word, try_it.text);
