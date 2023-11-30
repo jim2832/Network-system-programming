@@ -1,5 +1,5 @@
 #!/bin/bash
 
-kill %1
+killall -9 usock_server
 make clean
 clear

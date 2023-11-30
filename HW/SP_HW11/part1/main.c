@@ -31,12 +31,13 @@ int main(int argc, char **argv) {
 	}
 
 	while(fputs("What word do you want : ",stderr),fgets(try_it.word, WORD, stdin)) {
-		switch(lookup(&try_it,argv[1]) ) {
+		try_it.word[strlen(try_it.word)-1] = '\0'; // remove \n
+		switch(lookup(&try_it, argv[1]) ) {
 			case FOUND:
-				printf("%s : %s",try_it.word,try_it.text);
+				printf("%s : %s",try_it.word, try_it.text);
 				break;
 			case NOTFOUND:
-				printf("%s : Not Found!\n",try_it.word);
+				printf("%s : Not Found!\n", try_it.word);
 				break;
 			case UNAVAIL:
 				DIE(argv[1]);

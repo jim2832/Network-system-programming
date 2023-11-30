@@ -49,6 +49,9 @@ int lookup(Dictrec * sought, const char * resource) {
 		 * Fill in code. */
 		ftruncate(fd, filsiz);
 		table = (Dictrec*) mmap(NULL, filsiz, PROT_READ, MAP_SHARED, fd, 0);
+		if(table == MAP_FAILED){
+			DIE("mmap");
+		}
 		close(fd);
 	}
     
