@@ -9,6 +9,10 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "dict.h"
 
@@ -24,12 +28,21 @@ int main(int argc, char **argv) {
 
 	/* Create a UDP socket.
 	 * Fill in code. */
+	if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		DIE("socket");
+	}
 
 	/* Initialize address.
 	 * Fill in code. */
+	server.sin_family = AF_INET; // set family
+	server.sin_port = htons(PORT); // host to network short
+	server.sin_addr.s_addr = htonl(INADDR_ANY); // host to network long
 
 	/* Name and activate the socket.
 	 * Fill in code. */
+	if(bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0) {
+		DIE("bind");
+	}
 
 	for (;;) { /* await client packet; respond immediately */
 
@@ -38,16 +51,22 @@ int main(int argc, char **argv) {
 		/* Wait for a request.
 		 * Fill in code. */
 
-		while (___) {
+		while (recvfrom(sockfd, tryit->word, WORD, 0, (struct sockaddr *)&client, &siz) > 0) {
 			/* Lookup request and respond to user. */
 			switch(lookup(tryit,argv[1]) ) {
 				case FOUND: 
 					/* Send response.
 					 * Fill in code. */
+					if(sendto(sockfd, tryit->text, TEXT, 0, (struct sockaddr *)&client, sizeof(client)) < 0) {
+						DIE("sendto");
+					}
 					break;
 				case NOTFOUND : 
 					/* Send response.
 					 * Fill in code. */
+					if(sendto(sockfd, "XXXX", TEXT, 0, (struct sockaddr *)&client, sizeof(client)) < 0) {
+						DIE("sendto");
+					}
 					break;
 				case UNAVAIL:
 					DIE(argv[1]);

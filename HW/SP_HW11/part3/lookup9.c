@@ -8,7 +8,13 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "dict.h"
+#define h_addr h_addr_list[0] /* for backward compatibility */
 
 int lookup(Dictrec * sought, const char * resource) {
 	static int sockfd;
@@ -21,13 +27,31 @@ int lookup(Dictrec * sought, const char * resource) {
 
 		/* Set up destination address.
 		 * Fill in code. */
+		host = gethostbyname(resource);
+		if (host == NULL) {
+			fprintf(stderr,"Lookup : cannot find host %s\n",resource);
+			exit(errno);
+		}
+		server.sin_family = AF_INET; // set family
+		server.sin_port = htons(PORT); // host to network short
+		memcpy(&server.sin_addr, host->h_addr, host->h_length); // copy address to server.sin_addr
+		
 
 		/* Allocate a socket.
 		 * Fill in code. */
+		if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+			DIE("socket");
+		}
 	}
 
 	/* Send a datagram & await reply
 	 * Fill in code. */
+	if(sendto(sockfd, sought->word, WORD, 0, (struct sockaddr *)&server, sizeof(server)) < 0) {
+		DIE("sendto");
+	}
+	if(recvfrom(sockfd, sought->text, TEXT, 0, NULL, NULL) < 0) {
+		DIE("recvfrom");
+	}
 
 	if (strcmp(sought->text,"XXXX") != 0) {
 		return FOUND;
