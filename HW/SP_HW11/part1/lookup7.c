@@ -26,12 +26,12 @@ int lookup(Dictrec * sought, const char * resource) {
 
 		/* Set up destination address.
 		 * Fill in code. */
-		if((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
-			DIE("socket");
-
-		/* Allocate socket. */
 		server.sun_family = AF_UNIX;
 		strcpy(server.sun_path,resource);
+
+		/* Allocate socket. */
+		if((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
+			DIE("socket");
 
 		/* Connect to the server.
 		 * Fill in code. */

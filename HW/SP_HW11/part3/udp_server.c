@@ -50,7 +50,6 @@ int main(int argc, char **argv) {
 
 		/* Wait for a request.
 		 * Fill in code. */
-
 		while (recvfrom(sockfd, tryit->word, WORD, 0, (struct sockaddr *)&client, &siz) > 0) {
 			/* Lookup request and respond to user. */
 			switch(lookup(tryit,argv[1]) ) {

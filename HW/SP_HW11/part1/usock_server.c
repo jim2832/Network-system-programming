@@ -28,12 +28,12 @@ int main(int argc, char **argv) {
 
     /* Setup socket.
      * Fill in code. */
-	server.sun_family = AF_UNIX;
-	strcpy(server.sun_path, argv[2]);
+	sd = socket(AF_UNIX, SOCK_STREAM, 0);
     
     /* Initialize address.
      * Fill in code. */
-	sd = socket(AF_UNIX, SOCK_STREAM, 0);
+	server.sun_family = AF_UNIX;
+	strcpy(server.sun_path, argv[2]);
 
     /* Name and activate the socket.
      * Fill in code. */
