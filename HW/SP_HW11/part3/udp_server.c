@@ -56,14 +56,14 @@ int main(int argc, char **argv) {
 				case FOUND: 
 					/* Send response.
 					 * Fill in code. */
-					if(sendto(sockfd, tryit->text, TEXT, 0, (struct sockaddr *)&client, sizeof(client)) < 0) {
+					if(sendto(sockfd, tryit->text, TEXT, 0, (struct sockaddr *)&client, siz) < 0) {
 						DIE("sendto");
 					}
 					break;
 				case NOTFOUND : 
 					/* Send response.
 					 * Fill in code. */
-					if(sendto(sockfd, "XXXX", TEXT, 0, (struct sockaddr *)&client, sizeof(client)) < 0) {
+					if(sendto(sockfd, "XXXX", TEXT, 0, (struct sockaddr *)&client, siz) < 0) {
 						DIE("sendto");
 					}
 					break;
