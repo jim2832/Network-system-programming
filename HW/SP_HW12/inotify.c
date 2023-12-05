@@ -54,29 +54,29 @@ int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW 
 // monitor the events
 void monitor(){
     char buffer[BUF_LEN];
+
+    // read the events
     ssize_t numRead = read(inotify_fd, buffer, BUF_LEN);
     if(numRead < 0){
         DIE("read");
     }
 
-    for (char *ptr = buffer; ptr < buffer + numRead; ptr += EVENT_SIZE + ((struct inotify_event *)ptr)->len){
-        struct inotify_event *event = (struct inotify_event *)ptr;
+    // iterate over the events
+    for(char *ptr=buffer; ptr<buffer+numRead; ptr+= EVENT_SIZE + ((struct inotify_event *)ptr)->len){
+        struct inotify_event *event = (struct inotify_event *) ptr;
 
         // create event
         if(event->mask & IN_CREATE){
-            // print the event and the path
             printf("File created: %s\n", event->name);
         }
 
         // delete event
         else if(event->mask & IN_DELETE){
-            // print the event and the path
             printf("File deleted: %s\n", event->name);
         }
 
         // move event
         else if(event->mask & IN_MOVE){
-            // print the event and the path
             printf("File moved/renamed: %s\n", event->name);
         }
     }
