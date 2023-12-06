@@ -65,32 +65,31 @@ void monitor(){
     // iterate over the events
     FILE *FileLog = fopen("FileLogger", "a");
     for(char *ptr=buffer; ptr<buffer+numRead; ptr+= EVENT_SIZE + ((struct inotify_event *)ptr)->len){
+        // get the event
         struct inotify_event *event = (struct inotify_event *) ptr;
 
         // get the current time
         time_t t = time(NULL);
         struct tm *tm = localtime(&t);
-
-        // change the time format
-        char buffer[64];
-        strftime(buffer, sizeof(buffer), "%c", tm);
+        char TimeInfo[64];
+        strftime(TimeInfo, sizeof(TimeInfo), "%c", tm); // format: Sun Sep 16 01:03:52 1973
 
         // create event
         if(event->mask & IN_CREATE){
             printf("File created: %s\n", event->name);
-            fprintf(FileLog, "%s -> File created: %s\n", buffer, event->name);
+            fprintf(FileLog, "%s -> File created: %s\n", TimeInfo, event->name);
         }
 
         // delete event
         else if(event->mask & IN_DELETE){
             printf("File deleted: %s\n", event->name);
-            fprintf(FileLog, "%s -> File deleted: %s\n", buffer, event->name);
+            fprintf(FileLog, "%s -> File deleted: %s\n", TimeInfo, event->name);
         }
 
         // move event
         else if(event->mask & IN_MOVE){
             printf("File moved/renamed: %s\n", event->name);
-            fprintf(FileLog, "%s -> File moved/renamed: %s\n", buffer, event->name);
+            fprintf(FileLog, "%s -> File moved/renamed: %s\n", TimeInfo, event->name);
         }
     }
 
