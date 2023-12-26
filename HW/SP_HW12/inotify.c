@@ -1,138 +1,83 @@
-/*
-Write a program that logs all file creations, deletions, and renames under the
-directory named in its command-line argument. The program should monitor
-events in all of the subdirectories under the specified directory. To obtain a list of
-all of these subdirectories, you will need to make use of nftw() (Section 18.9). When
-a new subdirectory is added under the tree or a directory is deleted, the set of
-monitored subdirectories should be updated accordingly.
-*/
-
-#define _XOPEN_SOURCE 500
+#define _XOPEN_SOURCE 500 // For nftw
+#include <ftw.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/inotify.h>
-#include <limits.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <ftw.h>
-#include <time.h>
 
-#define DIE(x) perror(x), exit(errno)
-#define EVENT_SIZE (sizeof(struct inotify_event))
-#define BUF_LEN (1024 * (EVENT_SIZE + 16))
+#define BUF_LEN (1024 * (sizeof(struct inotify_event) + 16))
 
-// global variables
-int inotify_fd;
-int *directories;
-int num_directories = 0;
+static int inotify_fd;
 
-
-// callback function for nftw
-int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf){
-    if(typeflag == FTW_D){ // if it is a directory
-        // add one more element
-        directories = realloc(directories, (num_directories + 1) * sizeof(int));
-        if(directories == NULL){
-            DIE("realloc");
-        }
-
-        // add watch
-        directories[num_directories] = inotify_add_watch(inotify_fd, fpath, IN_CREATE | IN_DELETE | IN_MOVE);
-        if(directories[num_directories] == -1){
-            DIE("inotify_add_watch");
-        }
-
-        num_directories++;
+static void handle_event(const char *path, const struct inotify_event *event) {
+    if (event->mask & IN_CREATE) {
+        printf("File created: %s/%s\n", path, event->name);
+    } else if (event->mask & IN_DELETE) {
+        printf("File deleted: %s/%s\n", path, event->name);
+    } else if (event->mask & IN_MOVED_FROM) {
+        printf("File moved from: %s/%s\n", path, event->name);
+    } else if (event->mask & IN_MOVED_TO) {
+        printf("File moved to: %s/%s\n", path, event->name);
     }
+}
 
+static int event_handler(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
+    // Add the directory to the inotify watch list
+    if (typeflag == FTW_D || typeflag == FTW_DP) {
+        int wd = inotify_add_watch(inotify_fd, fpath, IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO);
+        if (wd == -1) {
+            perror("inotify_add_watch");
+            exit(EXIT_FAILURE);
+        }
+    }
     return 0;
 }
 
-
-// monitor the events
-void monitor(){
-    char buffer[BUF_LEN];
-
-    // read the events
-    ssize_t numRead = read(inotify_fd, buffer, BUF_LEN);
-    if(numRead < 0){
-        DIE("read");
-    }
-
-    // iterate over the events
-    FILE *FileLog = fopen("FileLogger", "a");
-    for(char *ptr=buffer; ptr<buffer+numRead; ptr+= EVENT_SIZE + ((struct inotify_event *)ptr)->len){
-        // get the event
-        struct inotify_event *event = (struct inotify_event *) ptr;
-
-        // get the current time
-        time_t t = time(NULL);
-        struct tm *tm = localtime(&t);
-        char TimeInfo[64];
-        strftime(TimeInfo, sizeof(TimeInfo), "%c", tm); // format: Sun Sep 16 01:03:52 1973
-
-        // create event
-        if(event->mask & IN_CREATE){
-            printf("File created: %s\n", event->name);
-            fprintf(FileLog, "%s -> File created: %s\n", TimeInfo, event->name);
-        }
-
-        // delete event
-        else if(event->mask & IN_DELETE){
-            printf("File deleted: %s\n", event->name);
-            fprintf(FileLog, "%s -> File deleted: %s\n", TimeInfo, event->name);
-        }
-
-        // move event
-        else if(event->mask & IN_MOVE){
-            printf("File moved/renamed: %s\n", event->name);
-            fprintf(FileLog, "%s -> File moved/renamed: %s\n", TimeInfo, event->name);
-        }
-    }
-
-    // close the file
-    if(fclose(FileLog) == EOF){
-        DIE("fclose");
-    }
-}
-
-
-int main(int argc, char *argv[]){
-    // error check
-    if(argc != 2){
-        printf("Usage: %s <directory>\n", argv[0]);
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <directory>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    // create inotify instance
+    // Set up inotify
     inotify_fd = inotify_init();
-    if(inotify_fd == -1){
-        DIE("inotify_init");
+    if (inotify_fd == -1) {
+        perror("inotify_init");
+        exit(EXIT_FAILURE);
     }
 
-    // add watch
-    int wd = inotify_add_watch(inotify_fd, argv[1], IN_CREATE | IN_DELETE | IN_MOVE);
-    if(wd == -1){
-        DIE("inotify_add_watch");
+    // Set up nftw to traverse the directory tree
+    if (nftw(argv[1], event_handler, 20, FTW_PHYS) == -1) {
+        perror("nftw");
+        exit(EXIT_FAILURE);
     }
 
-    // add directory to the list
-    if(nftw(argv[1], callback, 20, 0) == -1){
-        DIE("nftw");
+    // Monitor inotify events
+    char buf[BUF_LEN];
+    ssize_t numRead;
+    struct inotify_event *event;
+    while (1) {
+        if (nftw(argv[1], event_handler, 20, FTW_PHYS) == -1) {
+            perror("nftw");
+            exit(EXIT_FAILURE);
+        }
+
+        numRead = read(inotify_fd, buf, BUF_LEN);
+        if (numRead == 0) {
+            fprintf(stderr, "read() from inotify fd returned 0!");
+            exit(EXIT_FAILURE);
+        }
+
+        for (char *p = buf; p < buf + numRead;) {
+            event = (struct inotify_event *)p;
+            handle_event(argv[1], event);
+            p += sizeof(struct inotify_event) + event->len;
+        }
     }
 
-    // monitor the events
-    for(;;){
-        monitor();
-    }
-
-    // close inotify instance
-    if(close(inotify_fd) == -1){
-        DIE("close");
-    }
+    // Close inotify
+    close(inotify_fd);
 
     return 0;
 }
