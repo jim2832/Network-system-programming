@@ -100,20 +100,39 @@ int my_pclose(struct Process* child){
 
 
 int main(){
+    // Test my_popen with read mode
     struct Process child = my_popen("ls -l", "r");
 
-    if(child.file == NULL){
+    if (child.file == NULL) {
         perror("my_popen");
         exit(EXIT_FAILURE);
     }
 
     char buffer[1024];
-    while(fgets(buffer, sizeof(buffer), child.file)){
+    while (fgets(buffer, sizeof(buffer), child.file)) {
         printf("Output of child process: %s", buffer);
     }
 
     int status = my_pclose(&child);
-    if(status == -1){
+    if (status == -1) {
+        perror("my_pclose");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Child process exited with status %d\n", status);
+
+    // Test my_popen with write mode
+    struct Process writeChild = my_popen("cat > output.txt", "w");
+    if (writeChild.file == NULL) {
+        perror("my_popen");
+        exit(EXIT_FAILURE);
+    }
+
+    const char* message = "test message 1226";
+    fwrite(message, sizeof(char), strlen(message), writeChild.file);
+
+    status = my_pclose(&writeChild);
+    if (status == -1) {
         perror("my_pclose");
         exit(EXIT_FAILURE);
     }
