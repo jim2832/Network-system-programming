@@ -23,6 +23,7 @@
 #include "tlpi_hdr.h"
 
 #define SERVER_KEY 0x1aaaaaa1           /* Key for server's message queue */
+#define PATH_MAX 4096
 
 struct requestMsg {                     /* Requests (client to server) */
     int  clientId;                      /* ID of client's message queue */
